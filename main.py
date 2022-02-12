@@ -1,7 +1,9 @@
 import sys
 from PyQt5.QtWidgets import *
+import time
 from PyQt5 import QtGui
 from PyQt5 import QtCore
+from PyQt5.QtCore import QThread, pyqtSignal
 
 class App(QMainWindow):
 
@@ -34,23 +36,42 @@ class App(QMainWindow):
             self.mainbox.itemAt(i).widget().setParent(None)
 
         self.labelmain = QLabel()
-        self.labelmain.setAlignment(QtCore.Qt.AlignHCenter)
+        self.labelmain.setAlignment(QtCore.Qt.AlignCenter)
         self.labelmain.setMaximumHeight(50)
         self.labelmain.setText("Emotion detector")
+        self.labelmain.setStyleSheet("background-color : #62524D;"
+                                     "color : white")
         self.central.setStyleSheet("background-color : #9B8888;")
         font = QtGui.QFont('SansSerif', 20)
         self.labelmain.setFont(font)
-
         self.mainbox.addWidget(self.labelmain)
 
         self.chooseBtn = QPushButton()
         self.chooseBtn.setText('Выбрать изображение')
         self.chooseBtn.setFixedSize(350,32)
-        self.chooseBtn.setStyleSheet("background-color : #CBBFAF;"
-                                     "border-radius : 10px;")
+        self.chooseBtn.setStyleSheet("background-color : #B7ADA1;"
+                                     "border-radius : 10px;"
+                                     "border-bottom: 4px solid #6F665A")
         self.aboutBtn = QPushButton(self)
         self.aboutBtn.setText('О приложении')
+        self.aboutBtn.setFixedSize(350, 32)
+        self.aboutBtn.setStyleSheet("background-color : #B7ADA1;"
+                                     "border-radius : 10px;"
+                                    "border-bottom: 4px solid #6F665A")
 
+        self.groupbox = QGroupBox()
+        self.box1 = QHBoxLayout()
+        self.groupbox.setFixedHeight(40)
+        self.groupbox.setLayout(self.box1)
+        self.box1.addWidget(self.aboutBtn)
+        self.groupbox.setStyleSheet("border : 0px")
+
+        self.groupbox1 = QGroupBox()
+        self.box2 = QHBoxLayout()
+        self.box2.addWidget(self.chooseBtn)
+        self.groupbox1.setLayout(self.box2)
+        self.groupbox1.setFixedHeight(40)
+        self.groupbox1.setStyleSheet("border : 0px")
 
         self.groupbox2 = QGroupBox()
         self.queryLayout = QHBoxLayout()
@@ -62,8 +83,9 @@ class App(QMainWindow):
 
 
         self.mainbox.addWidget(self.groupbox2)
-        self.mainbox.addWidget(self.chooseBtn)
-        self.mainbox.addWidget(self.aboutBtn)
+        self.mainbox.addWidget(self.groupbox1)
+        self.mainbox.addWidget(self.groupbox)
+
 
         self.chooseBtn.clicked.connect(self.openFileNameDialog)
         self.aboutBtn.clicked.connect(self.start)
@@ -97,12 +119,25 @@ class App(QMainWindow):
         self.labelabout.setFont(font)
         self.queryLayout.addWidget(self.labelabout)
         self.groupbox2.setStyleSheet("border : 0px")
+
         self.chooseBtn.setVisible(False)
         self.aboutBtn.setVisible(False)
+
         self.menuBtn = QPushButton()
         self.menuBtn.setText('В главное меню')
+        self.menuBtn.setFixedSize(350, 32)
+        self.menuBtn.setStyleSheet("background-color : #B7ADA1;"
+                                    "border-radius : 10px;"
+                                    "border-bottom: 4px solid #6F665A")
+        self.groupbox3 = QGroupBox()
+        self.box3 = QHBoxLayout()
+        self.groupbox3.setFixedHeight(40)
+        self.groupbox3.setLayout(self.box3)
+        self.box3.addWidget(self.menuBtn)
+        self.groupbox3.setStyleSheet("border : 0px")
+
         self.menuBtn.clicked.connect(self.createUI)
-        self.mainbox.addWidget(self.menuBtn)
+        self.mainbox.addWidget(self.groupbox3)
 
 
     def openFileNameDialog(self): ## USE THIS TO GET PATH OF QUERY IMAGE...
@@ -122,24 +157,76 @@ class App(QMainWindow):
                 self.queryLayout.itemAt(0).widget().setParent(None)
                 self.queryLayout.addWidget(self.label1)
 
-
-
         self.groupbox2.setStyleSheet("border : 0px")
         self.chooseBtn.setVisible(False)
         self.aboutBtn.setVisible(False)
         self.resultBtn = QPushButton()
         self.resultBtn.setText('Результат')
+        self.resultBtn.setFixedSize(350, 32)
+        self.resultBtn.setStyleSheet("background-color : #B7ADA1;"
+                                   "border-radius : 10px;"
+                                   "border-bottom: 4px solid #6F665A")
+        self.groupbox4 = QGroupBox()
+        self.box4 = QHBoxLayout()
+        self.groupbox4.setFixedHeight(40)
+        self.groupbox4.setLayout(self.box4)
+        self.box4.addWidget(self.resultBtn)
+        self.groupbox4.setStyleSheet("border : 0px")
         self.resultBtn.clicked.connect(self.result)
-        self.mainbox.addWidget(self.resultBtn)
+        self.mainbox.addWidget(self.groupbox4)
+
         self.menuBtn = QPushButton()
         self.menuBtn.setText('В главное меню')
+        self.menuBtn.setFixedSize(350, 32)
+        self.menuBtn.setStyleSheet("background-color : #B7ADA1;"
+                                     "border-radius : 10px;"
+                                     "border-bottom: 4px solid #6F665A")
+        self.groupbox5 = QGroupBox()
+        self.box5 = QHBoxLayout()
+        self.groupbox5.setFixedHeight(40)
+        self.groupbox5.setLayout(self.box5)
+        self.box5.addWidget(self.menuBtn)
+        self.groupbox5.setStyleSheet("border : 0px")
+        self.mainbox.addWidget(self.groupbox5)
         self.menuBtn.clicked.connect(self.createUI)
-        self.mainbox.addWidget(self.menuBtn)
 
     def result(self):
-        self.resultBtn.setText("Сюда надо вставить результат")
-        self.resultBtn.setDisabled(True)
+        self.pbar = QProgressBar(self)
+        self.pbar.setValue(0)
+        self.mainbox.addWidget(self.pbar)
 
+        self.thread = Thread()
+        self.thread._signal.connect(self.signal_accept)
+        self.thread.start()
+
+        #код вставить тут
+        #путь к изображению хранится в path_to_image = self.queryimg
+        #результат сохранить в переменной result в def signal_accept
+        path_to_image = self.queryimg
+
+
+    def signal_accept(self, msg):
+        self.pbar.setValue(int(msg))
+        if self.pbar.value() == 99:
+            self.pbar.setValue(100)
+            result = "Сюда надо вставить результат"  # В виде строки
+            self.resultBtn.setText(result)
+            self.resultBtn.setDisabled(True)
+            self.pbar.setVisible(False)
+            return
+
+class Thread(QThread):
+    _signal = pyqtSignal(int)
+    def __init__(self):
+        super(Thread, self).__init__()
+
+    def __del__(self):
+        self.wait()
+
+    def run(self):
+        for i in range(100):
+            time.sleep(0.01)
+            self._signal.emit(i)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
