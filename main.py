@@ -96,7 +96,11 @@ class App(QMainWindow):
         self.labelmain.setText("О приложении")
         self.labelabout = QLabel()
         self.labelabout.setAlignment(QtCore.Qt.AlignHCenter)
-        self.labelabout.setText("Цель проекта:\n"
+        self.labelabout.setText("Выполнили:\n"
+                                "Дегтярев А.В.\n"
+                                "Заморщикова Д.А.\n"
+                                "Лотов А.Р.\n"
+                                "Цель проекта:\n"
                                 "Разработать модель нейронной сети \n"
                                 "по распознаванию эмоций по \n"
                                 "фотографиям и разработать к нему\n"
