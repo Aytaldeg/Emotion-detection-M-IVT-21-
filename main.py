@@ -5,14 +5,19 @@ import time
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
+from pip import main
 from tensorflow.keras.models import load_model
 
 import cv2
 from PIL import Image
 from keras.preprocessing import image
 import numpy as np
+from skimage import io
+
+mainresult = ""
 
 class App(QMainWindow):
+    
 
     def __init__(self):
         super().__init__()
@@ -218,11 +223,12 @@ class App(QMainWindow):
         
         path_to_image = self.queryimg
         
+        
         # Загрузка изображения
-        image_cv2 = cv2.imread(path_to_image)
+        img = io.imread(path_to_image)
 
         # преобразуем изображение к оттенкам серого
-        image_gray = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2GRAY)
+        image_gray = cv2.cvtColor(img, cv2.IMREAD_GRAYSCALE )
 
         # инициализировать распознаватель лиц (каскад Хаара по умолчанию)
         face_cascade = cv2.CascadeClassifier("haarcascade_fontalface_default.xml")
@@ -232,24 +238,26 @@ class App(QMainWindow):
         # печатать количество найденных лиц
 
         numfaces = 0
-        img_crop
+        img_crop = 0
         # для всех обнаруженных лиц рисуем синий квадрат
         for x, y, width, height in faces:
             if (width-x)>20:
-                cv2.rectangle(image_cv2, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
+                cv2.rectangle(image_gray, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
                 numfaces+=1
                 img = Image.open(path_to_image)
                 img_crop = img.crop((x, y, x + width, y + height))
+                img_crop.save("testing.jpg", quality=1000)
                 
-        img_crop = image.smart_resize((48,48))
-        
+        img = image.load_img("./testing.jpg",target_size = (48,48),color_mode = "grayscale")
+        img = np.array(img)
         label_dict = {0:'Angry',1:'Disgust',2:'Fear',3:'Happy',4:'Neutral',5:'Sad',6:'Surprise'}
-        img_crop = np.expand_dims(img_crop,axis = 0) #makes image shape (1,48,48)
-        img_crop = img_crop.reshape(1,48,48,1)
-        result = model.predict(img_crop)
+        img = np.expand_dims(img,axis = 0) #makes image shape (1,48,48)
+        img = img.reshape(1,48,48,1)
+        result = model.predict(img)
         result = list(result[0])
         img_index = result.index(max(result))
-        resulting = label_dict[img_index]
+        global mainresult
+        mainresult = label_dict[img_index]
 
 
 
@@ -260,7 +268,7 @@ class App(QMainWindow):
         self.pbar.setValue(int(msg))
         if self.pbar.value() == 99:
             self.pbar.setValue(100)
-            result = "Сюда надо вставить результат"  # В виде строки
+            result = mainresult # В виде строки
             self.resultBtn.setText(result)
             self.resultBtn.setDisabled(True)
             self.pbar.setVisible(False)
