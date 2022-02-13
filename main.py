@@ -250,7 +250,7 @@ class App(QMainWindow):
                 
         img = image.load_img("./testing.jpg",target_size = (48,48),color_mode = "grayscale")
         img = np.array(img)
-        label_dict = {0:'Angry',1:'Disgust',2:'Fear',3:'Happy',4:'Neutral',5:'Sad',6:'Surprise'}
+        label_dict = {0:'Злость',1:'Отвращение',2:'Страх',3:'Радость',4:'Нейтральный',5:'Грустный',6:'Удивление'}
         img = np.expand_dims(img,axis = 0) #makes image shape (1,48,48)
         img = img.reshape(1,48,48,1)
         result = model.predict(img)
