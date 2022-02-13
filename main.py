@@ -1,9 +1,16 @@
+import imp
 import sys
 from PyQt5.QtWidgets import *
 import time
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal
+from tensorflow.keras.models import load_model
+
+import cv2
+from PIL import Image
+from keras.preprocessing import image
+import numpy as np
 
 class App(QMainWindow):
 
@@ -206,9 +213,49 @@ class App(QMainWindow):
         #код вставить тут
         #путь к изображению хранится в path_to_image = self.queryimg
         #результат сохранить в переменной result в def signal_accept
+        #load_model
+        model = load_model('model')
+        
         path_to_image = self.queryimg
+        
+        # Загрузка изображения
+        image_cv2 = cv2.imread(path_to_image)
+
+        # преобразуем изображение к оттенкам серого
+        image_gray = cv2.cvtColor(image_cv2, cv2.COLOR_BGR2GRAY)
+
+        # инициализировать распознаватель лиц (каскад Хаара по умолчанию)
+        face_cascade = cv2.CascadeClassifier("haarcascade_fontalface_default.xml")
+
+        # обнаружение всех лиц на изображении
+        faces = face_cascade.detectMultiScale(image_gray)
+        # печатать количество найденных лиц
+
+        numfaces = 0
+        img_crop
+        # для всех обнаруженных лиц рисуем синий квадрат
+        for x, y, width, height in faces:
+            if (width-x)>20:
+                cv2.rectangle(image_cv2, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
+                numfaces+=1
+                img = Image.open(path_to_image)
+                img_crop = img.crop((x, y, x + width, y + height))
+                
+        img_crop = image.smart_resize((48,48))
+        
+        label_dict = {0:'Angry',1:'Disgust',2:'Fear',3:'Happy',4:'Neutral',5:'Sad',6:'Surprise'}
+        img_crop = np.expand_dims(img_crop,axis = 0) #makes image shape (1,48,48)
+        img_crop = img_crop.reshape(1,48,48,1)
+        result = model.predict(img_crop)
+        result = list(result[0])
+        img_index = result.index(max(result))
+        resulting = label_dict[img_index]
 
 
+
+
+    
+    
     def signal_accept(self, msg):
         self.pbar.setValue(int(msg))
         if self.pbar.value() == 99:
