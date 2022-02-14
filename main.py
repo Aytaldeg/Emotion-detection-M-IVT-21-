@@ -224,7 +224,6 @@ class App(QMainWindow):
         path_to_image = self.queryimg
         
         
-
         # Добаление данных
         prototxt_path = "./SSD/deploy.prototxt.txt"
         model_path = "./SSD/res10_300x300_ssd_iter_140000_fp16.caffemodel"
@@ -244,6 +243,8 @@ class App(QMainWindow):
         modelssd.setInput(blob)
         # выполняем логический вывод и получаем результат
         output = np.squeeze(modelssd.forward())
+
+        print(output.shape[0])
 
         font_scale = 1.0
         for i in range(0, output.shape[0]):
@@ -288,10 +289,6 @@ class App(QMainWindow):
         mainresult = label_dict[img_index]
 
 
-
-
-    
-    
     def signal_accept(self, msg):
         self.pbar.setValue(int(msg))
         if self.pbar.value() == 99:
