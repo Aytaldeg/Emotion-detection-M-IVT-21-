@@ -224,29 +224,57 @@ class App(QMainWindow):
         path_to_image = self.queryimg
         
         
-        # Загрузка изображения
+
+        # Добаление данных
+        prototxt_path = "./SSD/deploy.prototxt.txt"
+        model_path = "./SSD/res10_300x300_ssd_iter_140000_fp16.caffemodel"
+
+        # загрузим модель Caffe
+        modelssd = cv2.dnn.readNetFromCaffe(prototxt_path, model_path)
+
+        # читаем изображение
         img = io.imread(path_to_image)
+        # получаем ширину и высоту изображения
+        h, w = img.shape[:2]
 
-        # преобразуем изображение к оттенкам серого
-        image_gray = cv2.cvtColor(img, cv2.IMREAD_GRAYSCALE )
+        # предварительная обработка: изменение размера и вычитание среднего
+        blob = cv2.dnn.blobFromImage(img, 1.0, (300, 300), (104.0, 177.0, 123.0))
 
-        # инициализировать распознаватель лиц (каскад Хаара по умолчанию)
-        face_cascade = cv2.CascadeClassifier("haarcascade_fontalface_default.xml")
+        # устанавливаем на вход нейронной сети изображение
+        modelssd.setInput(blob)
+        # выполняем логический вывод и получаем результат
+        output = np.squeeze(modelssd.forward())
 
-        # обнаружение всех лиц на изображении
-        faces = face_cascade.detectMultiScale(image_gray)
-        # печатать количество найденных лиц
+        font_scale = 1.0
+        for i in range(0, output.shape[0]):
+            # получить уверенность
+            confidence = output[i, 2]
+            # если достоверность выше 50%, то нарисуйте окружающий прямоугольник
+            if confidence > 0.5:
+                # получить координаты окружающего блока и масштабировать их до исходного изображения
+                box = output[i, 3:7] * np.array([w, h, w, h])
+                # преобразовать в целые числа
+                start_x, start_y, end_x, end_y = box.astype(np.int)
+                # рисуем прямоугольник вокруг лица
+                cv2.rectangle(img, (start_x, start_y), (end_x, end_y), color=(255, 0, 0), thickness=2)
+                # также нарисуем текст
+                cv2.putText(img, f"{confidence*100:.2f}%", (start_x, start_y-5), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), 2)
 
-        numfaces = 0
-        img_crop = 0
-        # для всех обнаруженных лиц рисуем синий квадрат
-        for x, y, width, height in faces:
-            if (width-x)>20:
-                cv2.rectangle(image_gray, (x, y), (x + width, y + height), color=(255, 0, 0), thickness=2)
-                numfaces+=1
+                x = (start_x + end_x) / 2
+                y = (start_y + end_y) / 2 
+
+                if end_x - start_x < end_y - start_y:
+                    weith = end_x - start_x
+                else: weith = end_y - start_y  
+
+                weith = weith * 0.5
+
+                print("----------------------------------------------------------------")
+                print(box)
+
                 img = Image.open(path_to_image)
-                img_crop = img.crop((x, y, x + width, y + height))
-                img_crop.save("testing.jpg", quality=1000)
+                img_crop = img.crop((x - weith, y - weith, x + weith, y + weith))
+                img_crop.save("testing.jpg", quality=100)
                 
         img = image.load_img("./testing.jpg",target_size = (48,48),color_mode = "grayscale")
         img = np.array(img)
